@@ -1,0 +1,11 @@
+# ninja log v6
+104	1995	8007791512795495	CMakeFiles/collector-service.dir/src/Logger.cpp.obj	dbaebceab000f3c3
+162	2089	8007791513374079	CMakeFiles/collector-service.dir/src/ModelParser.cpp.obj	1097a1f7e0ae5246
+186	2195	8007791513616735	CMakeFiles/collector-service.dir/src/CommandProcessor.cpp.obj	7451181225faf957
+149	2637	8007791513240376	CMakeFiles/collector-service.dir/src/DataTask.cpp.obj	6214b16c195a5f27
+174	3004	8007791513496769	CMakeFiles/collector-service.dir/src/ModelRepository.cpp.obj	cb1dddc6bd57fb5e
+114	3035	8007791512894670	CMakeFiles/collector-service.dir/src/SQLiteManager.cpp.obj	bd972aba858826ff
+91	8179	8007791512669315	CMakeFiles/collector-service.dir/src/main.cpp.obj	6641533fb84560a
+139	19379	8007791513150161	CMakeFiles/collector-service.dir/src/DriverClient.cpp.obj	96c8a978584755b5
+127	19688	8007791513022515	CMakeFiles/collector-service.dir/src/MockDriverServer.cpp.obj	4cb0a30474698765
+66	2431	8007792636647473	collector-service.exe	974b2ba18c2b6ff7

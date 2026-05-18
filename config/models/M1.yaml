@@ -1,0 +1,139 @@
+Device:
+  InfoVer: 1.0.12
+  Name: FNC
+  Description: FNC
+  StdName: MachineTool
+  StdClass: Machine
+  CommCapable: true
+  SafeInterval: 100
+  Properties:
+    Warranty: 12Months
+    UserManual: http://nc-link.org.cn/DEV01.html
+    Hotline: +86-40000000
+    Mailbox: service@nc-link.org.cn
+  Component:
+    - Name: Position
+      Description: 机床位置与坐标系统
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: MachCoord
+          Type: float64
+          ReadOnly: true
+          Dimension: 3
+          Unit: ''
+          Description: 机床3轴坐标:{X:1.2,Y:1.3,Z:1.4}
+        - Name: AbsCoord
+          Type: float64
+          ReadOnly: true
+          Dimension: 3
+          Unit: ''
+          Description: 机床3轴绝对坐标:{X:1.2,Y:1.3,Z:1.4}
+        - Name: RelCoord
+          Type: float64
+          ReadOnly: true
+          Dimension: 3
+          Unit: ''
+          Description: 机床3轴相对坐标:{X:1.2,Y:1.3,Z:1.4}
+    - Name: ProgramTask
+      Description: 程序与任务组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: CurrProgName
+          Type: str
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 当前运行程序名称
+    - Name: SystemTime
+      Description: 系统时间组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: RunTime
+          Type: float64
+          ReadOnly: true
+          Dimension: 1
+          Unit: 分钟
+          Description: 系统运行时间(单值)
+    - Name: SpindleRateInfo
+      Description: 轴与倍率信息组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: spindlespeed
+          Type: int32
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 当前主轴转速
+        - Name: SpindleRate
+          Type: int32
+          ReadOnly: true
+          Dimension: 1
+          Unit: '%'
+          Description: 主轴倍率
+        - Name: FeedRate
+          Type: int32
+          ReadOnly: true
+          Dimension: 1
+          Unit: '%'
+          Description: 进给倍率
+        - Name: FeedSpeed
+          Type: int32
+          ReadOnly: true
+          Dimension: 1
+          Unit: '%'
+          Description: 进给速度
+    - Name: SetSpeed
+      Description: 预设速度组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: GetSetF
+          Type: float64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 设定进给F(单值)
+        - Name: GetSetS
+          Type: float64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 设定主轴S(单值)
+    - Name: Alarm
+      Description: 报警组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: AlarmNum
+          Type: int32
+          ReadOnly: true
+          Dimension: 2
+          Unit: ''
+          Description: '[0]报警状态,[1]报警数量'
+        - Name: AlarmCode
+          Type: int32
+          ReadOnly: true
+          Dimension: 50
+          Unit: ''
+          Description: 报警代码数组(最多50)
+        - Name: AlarmMsg
+          Type: str
+          ReadOnly: true
+          Dimension: 50
+          Unit: ''
+          Description: 报警描述数组(最多50)
+    - Name: SsytemOtherInfo
+      Description: 其他信息组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: PartCount
+          Type: int32
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 加工件数

@@ -1,0 +1,19 @@
+﻿{
+  "terminal.integrated.defaultProfile.windows": "MSVC x64 Developer Command Prompt",
+  "terminal.integrated.profiles.windows": {
+    "MSVC x64 Developer Command Prompt": {
+      "path": "cmd.exe",
+      "args": [
+        "/k",
+        "D:\\visual studio\\Communtity\\Common7\\Tools\\VsDevCmd.bat",
+        "-arch=x64",
+        "-host_arch=x64"
+      ]
+    }
+  },
+  "cmake.cmakePath": "D:\\visual studio\\Communtity\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
+  "cmake.generator": "Ninja",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.useVsDeveloperEnvironment": "always",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

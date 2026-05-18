@@ -1,0 +1,1 @@
+﻿{"type":"json","uid":"admin","pid":"123456","cmd":{"category":"update_device","params":{"device_name":"devA","model":"M1","model_version":"1.1","IpAddr":"127.0.0.1:9001","SampleInterval":1000,"driver_path":""}},"mid":"6CA88AD08679460EAA768A23C5301CAB"}

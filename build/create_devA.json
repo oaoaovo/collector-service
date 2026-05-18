@@ -1,0 +1,1 @@
+﻿{"type":"json","uid":"admin","pid":"123456","cmd":{"category":"create_device","params":{"device_name":"devA","model":"M1","model_version":"1.0","addr":"127.0.0.1:9001","SampleInterval":1000,"driver_path":""}},"mid":"54B52774D8CA41148BC233DD8B51BC14"}

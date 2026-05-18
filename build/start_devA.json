@@ -1,0 +1,1 @@
+﻿{"type":"json","uid":"admin","pid":"123456","cmd":{"category":"start_device_collect","params":{"device_name":"devA"}},"mid":"start-devA"}

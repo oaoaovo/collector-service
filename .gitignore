@@ -1,0 +1,13 @@
+build*/CMakeFiles/
+build*/CMakeCache.txt
+build*/Makefile
+build*/cmake_install.cmake
+build*/collector-service*.exe
+build*/data/
+build*/server.*
+build-phase55/
+data/*.sqlite
+*.log
+*.pid
+server.out
+server.err
