@@ -1,4 +1,5 @@
 # collector-service
+<<<<<<< HEAD
 
 ## Responsibility
 
@@ -111,3 +112,6 @@ In command-file mode the mock driver starts only for `start_device_collect` comm
 - 2026-05-14: Phase 3 MockDriverServer WebSocket server added.
 - 2026-05-14: Phase 2 SQLiteManager, schema initialization, seed data, and startup readback added.
 - 2026-05-14: Phase 1 skeleton created.
+=======
+Task Deom
+>>>>>>> 2dbb1b53bf4df74a985b31d65273c2babdec1221
