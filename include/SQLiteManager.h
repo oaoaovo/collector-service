@@ -4,6 +4,7 @@
 
 #include <sqlite3.h>
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -37,4 +38,5 @@ private:
 
     std::string databasePath_;
     sqlite3* db_ = nullptr;
+    mutable std::recursive_mutex dbMutex_;
 };

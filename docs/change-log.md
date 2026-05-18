@@ -2,6 +2,9 @@
 
 ## 2026-05-18
 
+- Implemented Phase 6 multi-device `DataTask` scheduling with per-device worker threads, stop flags, and status records.
+- Added `start_all`, `stop_all`, and `get_status` command handling.
+- Added SQLiteManager internal locking so concurrent collection workers serialize access to the shared SQLite connection.
 - Added `Device.Status` with SQLite migration support so devices can be marked online/offline.
 - Changed `start_device_collect` to require an online device and start one named periodic background task.
 - Added fast stop checks during sample-interval sleep so `stop_device_collect` can stop promptly.

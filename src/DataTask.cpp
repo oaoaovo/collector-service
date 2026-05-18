@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -217,25 +218,65 @@ DataTask::~DataTask() {
 }
 
 void DataTask::startAll() {
-    Logger::info("DataTask startAll called; Phase 5.5 starts named devices only");
+    const auto devices = sqliteManager_.getDevices();
+    int startedCount = 0;
+    int skippedCount = 0;
+
+    for (const auto& device : devices) {
+        if (device.status == 0) {
+            ++skippedCount;
+            Logger::warn("DataTask startAll skipped offline device: " + device.name);
+            continue;
+        }
+
+        const auto result = startDeviceCollect(device.name, "");
+        if (result.ok()) {
+            ++startedCount;
+        } else {
+            ++skippedCount;
+            Logger::warn("DataTask startAll skipped " + device.name + ": " + result.msg);
+        }
+    }
+
+    Logger::info("DataTask startAll finished, started=" + std::to_string(startedCount) +
+                 ", skipped=" + std::to_string(skippedCount));
 }
 
 void DataTask::stopAll() {
-    stopRequested_ = true;
-    if (workerThread_.joinable()) {
-        workerThread_.join();
-    }
+    std::vector<std::thread> threads;
 
     {
         std::lock_guard<std::mutex> lock(stateMutex_);
+        for (auto& entry : stopFlags_) {
+            *entry.second = true;
+        }
+        for (auto& entry : workerThreads_) {
+            if (entry.second.joinable()) {
+                threads.push_back(std::move(entry.second));
+            }
+        }
+        workerThreads_.clear();
+        stopFlags_.clear();
         activeDevices_.clear();
     }
+
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
     Logger::info("DataTask stopped");
 }
 
 std::vector<DeviceStatus> DataTask::getStatus() const {
     std::lock_guard<std::mutex> lock(stateMutex_);
-    return statuses_;
+    std::vector<DeviceStatus> statuses;
+    statuses.reserve(statuses_.size());
+    for (const auto& entry : statuses_) {
+        statuses.push_back(entry.second);
+    }
+    return statuses;
 }
 
 // Initialize model-based DataPoint rows for one device.
@@ -290,24 +331,38 @@ CommandResult DataTask::startDeviceCollect(const std::string& deviceName, const 
             throw std::runtime_error("device has no configured data points: " + deviceName);
         }
 
+        std::thread staleThread;
         {
             std::lock_guard<std::mutex> lock(stateMutex_);
-            if (!activeDevices_.empty()) {
-                throw std::runtime_error("another device collection is already running");
+            if (activeDevices_.count(deviceName) != 0) {
+                throw std::runtime_error("device collection is already running: " + deviceName);
             }
-            activeDevices_.insert(deviceName);
+
+            auto staleThreadIt = workerThreads_.find(deviceName);
+            if (staleThreadIt != workerThreads_.end()) {
+                staleThread = std::move(staleThreadIt->second);
+                workerThreads_.erase(staleThreadIt);
+            }
+            stopFlags_.erase(deviceName);
         }
 
-        stopRequested_ = false;
-        if (workerThread_.joinable()) {
-            workerThread_.join();
+        if (staleThread.joinable()) {
+            staleThread.join();
         }
-        workerThread_ = std::thread(&DataTask::runDeviceTask, this, device);
+
+        auto stopFlag = std::make_shared<std::atomic_bool>(false);
+        {
+            std::lock_guard<std::mutex> lock(stateMutex_);
+            activeDevices_.insert(deviceName);
+            stopFlags_[deviceName] = stopFlag;
+            workerThreads_[deviceName] = std::thread(&DataTask::runDeviceTask, this, device, stopFlag);
+        }
 
         result.msg = "device collection started: " + deviceName;
     } catch (const std::exception& ex) {
         std::lock_guard<std::mutex> lock(stateMutex_);
         activeDevices_.erase(deviceName);
+        stopFlags_.erase(deviceName);
         result.code = 500;
         result.msg = ex.what();
     }
@@ -326,17 +381,29 @@ CommandResult DataTask::stopDeviceCollect(const std::string& deviceName, const s
         return result;
     }
 
+    std::thread threadToJoin;
     {
         std::lock_guard<std::mutex> lock(stateMutex_);
         if (activeDevices_.count(deviceName) == 0) {
             result.msg = "device collection is not running: " + deviceName;
             return result;
         }
+
+        auto flagIt = stopFlags_.find(deviceName);
+        if (flagIt != stopFlags_.end()) {
+            *flagIt->second = true;
+        }
+
+        auto threadIt = workerThreads_.find(deviceName);
+        if (threadIt != workerThreads_.end()) {
+            threadToJoin = std::move(threadIt->second);
+            workerThreads_.erase(threadIt);
+        }
+        stopFlags_.erase(deviceName);
     }
 
-    stopRequested_ = true;
-    if (workerThread_.joinable()) {
-        workerThread_.join();
+    if (threadToJoin.joinable()) {
+        threadToJoin.join();
     }
 
     {
@@ -350,11 +417,12 @@ CommandResult DataTask::stopDeviceCollect(const std::string& deviceName, const s
 
 //閲囬泦鏁版嵁
 
-void DataTask::runDeviceTask(Device device) {
+void DataTask::runDeviceTask(Device device, std::shared_ptr<std::atomic_bool> stopFlag) {
     DeviceStatus status;
+    status.deviceName = device.name;
     int failCount = 0;
 
-    while (!stopRequested_) {
+    while (!*stopFlag) {
         try {
             device = sqliteManager_.getDeviceByName(device.name);
             if (device.status == 0) {
@@ -402,6 +470,7 @@ void DataTask::runDeviceTask(Device device) {
         } catch (const std::exception& ex) {
             ++failCount;
             status.connected = false;
+            status.machineConnected = false;
             status.failCount = failCount;
             status.error = ex.what();
             setLatestStatus(status);
@@ -412,20 +481,21 @@ void DataTask::runDeviceTask(Device device) {
             }
         }
 
-        sleepUntilNextCycle(device.sampleIntervalMs);
+        sleepUntilNextCycle(device.sampleIntervalMs, stopFlag);
     }
 
     {
         std::lock_guard<std::mutex> lock(stateMutex_);
         activeDevices_.erase(device.name);
+        stopFlags_.erase(device.name);
     }
 }
 
-void DataTask::sleepUntilNextCycle(int sampleIntervalMs) {
+void DataTask::sleepUntilNextCycle(int sampleIntervalMs, const std::shared_ptr<std::atomic_bool>& stopFlag) {
     const auto interval = std::chrono::milliseconds(std::max(sampleIntervalMs, 100));
     const auto step = std::chrono::milliseconds(100);
     auto slept = std::chrono::milliseconds(0);
-    while (!stopRequested_ && slept < interval) {
+    while (!*stopFlag && slept < interval) {
         const auto remaining = interval - slept;
         const auto currentStep = remaining < step ? remaining : step;
         std::this_thread::sleep_for(currentStep);
@@ -435,8 +505,7 @@ void DataTask::sleepUntilNextCycle(int sampleIntervalMs) {
 
 void DataTask::setLatestStatus(const DeviceStatus& status) {
     std::lock_guard<std::mutex> lock(stateMutex_);
-    statuses_.clear();
-    statuses_.push_back(status);
+    statuses_[status.deviceName] = status;
 }
 
 void DataTask::processResponse(const Device& device,

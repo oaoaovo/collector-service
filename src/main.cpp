@@ -119,14 +119,16 @@ int main(int argc, char* argv[]) {
         if (argc >= 3 && (std::string(argv[1]) == "--cmd" || std::string(argv[1]) == "--cmd-file")) {
             MockDriverServer mockDriverServer(kMockDriverHost, kMockDriverPort);
             const std::string commandText = std::string(argv[1]) == "--cmd-file" ? readTextFile(argv[2]) : argv[2];
-            if (commandText.find("start_device_collect") != std::string::npos) {
+            const bool startsCollection = commandText.find("start_device_collect") != std::string::npos ||
+                                          commandText.find("start_all") != std::string::npos;
+            if (startsCollection) {
                 mockDriverServer.start();
                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
             }
 
             const auto response = commandProcessor.handle(commandText);
             Logger::info("Command response: " + response);
-            if (commandText.find("start_device_collect") != std::string::npos) {
+            if (startsCollection) {
                 Logger::info("collection is running. press Enter to stop.");
                 std::string stopLine;
                 std::getline(std::cin, stopLine);

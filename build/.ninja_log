@@ -9,3 +9,8 @@
 139	19379	8007791513150161	CMakeFiles/collector-service.dir/src/DriverClient.cpp.obj	96c8a978584755b5
 127	19688	8007791513022515	CMakeFiles/collector-service.dir/src/MockDriverServer.cpp.obj	4cb0a30474698765
 66	2431	8007792636647473	collector-service.exe	974b2ba18c2b6ff7
+54	6357	8007955444857094	CMakeFiles/collector-service.dir/src/CommandProcessor.cpp.obj	7451181225faf957
+44	6514	8007955444774399	CMakeFiles/collector-service.dir/src/DataTask.cpp.obj	6214b16c195a5f27
+34	6651	8007955444690318	CMakeFiles/collector-service.dir/src/SQLiteManager.cpp.obj	bd972aba858826ff
+22	25676	8007955444556434	CMakeFiles/collector-service.dir/src/main.cpp.obj	6641533fb84560a
+25694	28671	8007955701270029	collector-service.exe	974b2ba18c2b6ff7

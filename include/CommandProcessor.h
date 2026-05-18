@@ -19,6 +19,8 @@ private:
     CommandResult handleUpdateDevice(const std::string& requestText, const std::string& mid);
     CommandResult handleStartDeviceCollect(const std::string& requestText, const std::string& mid);
     CommandResult handleStopDeviceCollect(const std::string& requestText, const std::string& mid);
+    CommandResult handleStartAll(const std::string& mid);
+    CommandResult handleStopAll(const std::string& mid);
 
     SQLiteManager& sqliteManager_;
     DataTask& dataTask_;

@@ -4,6 +4,8 @@
 #include "ModelRepository.h"
 
 #include <atomic>
+#include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <set>
@@ -29,18 +31,18 @@ public:
     std::vector<DeviceStatus> getStatus() const;
 
 private:
-    void runDeviceTask(Device device);
+    void runDeviceTask(Device device, std::shared_ptr<std::atomic_bool> stopFlag);
     void processResponse(const Device& device,
                          const std::vector<DataPoint>& points,
                          const std::string& responseText);
-    void sleepUntilNextCycle(int sampleIntervalMs);
+    void sleepUntilNextCycle(int sampleIntervalMs, const std::shared_ptr<std::atomic_bool>& stopFlag);
     void setLatestStatus(const DeviceStatus& status);
 
     SQLiteManager& sqliteManager_;
-    std::vector<DeviceStatus> statuses_;
+    std::map<std::string, DeviceStatus> statuses_;
     std::set<std::string> activeDevices_;
+    std::map<std::string, std::thread> workerThreads_;
+    std::map<std::string, std::shared_ptr<std::atomic_bool>> stopFlags_;
     ModelRepository modelRepository_;
     mutable std::mutex stateMutex_;
-    std::thread workerThread_;
-    std::atomic_bool stopRequested_{false};
 };

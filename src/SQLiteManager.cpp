@@ -76,12 +76,14 @@ SQLiteManager::~SQLiteManager() {
 }
 
 bool SQLiteManager::deviceExists(const std::string& deviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_, "SELECT 1 FROM Device WHERE Name = ? LIMIT 1;");
     bindText(stmt.stmt, 1, deviceName);
     return sqlite3_step(stmt.stmt) == SQLITE_ROW;
 }
 
 Device SQLiteManager::getDeviceByName(const std::string& deviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_,
                    "SELECT Id, Name, IpAddr, Port, SampleInterval, Status, Model, ModelVersion, DriverPath "
                    "FROM Device WHERE Name = ? LIMIT 1;");
@@ -105,6 +107,7 @@ Device SQLiteManager::getDeviceByName(const std::string& deviceName) const {
 }
 
 void SQLiteManager::createDevice(const DeviceUpsert& device) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     if (deviceExists(device.name)) {
         throw std::runtime_error("device already exists: " + device.name);
     }
@@ -125,6 +128,7 @@ void SQLiteManager::createDevice(const DeviceUpsert& device) {
 }
 
 void SQLiteManager::updateDevice(const DeviceUpsert& device) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     const auto targetName = !device.oldName.empty() ? device.oldName : device.name;
     const auto existing = getDeviceByName(targetName);
     if (device.name != targetName && deviceExists(device.name)) {
@@ -158,6 +162,7 @@ void SQLiteManager::updateDevice(const DeviceUpsert& device) {
 }
 
 void SQLiteManager::deleteDevice(const std::string& deviceName) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     if (!deviceExists(deviceName)) {
         throw std::runtime_error("device not found: " + deviceName);
     }
@@ -182,16 +187,19 @@ void SQLiteManager::deleteDevice(const std::string& deviceName) {
 }
 
 bool SQLiteManager::isDeviceOnline(const std::string& deviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     return getDeviceByName(deviceName).status != 0;
 }
 
 void SQLiteManager::deleteDataPointsByDeviceName(const std::string& deviceName) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_, "DELETE FROM DataPoint WHERE DName = ?;");
     bindText(stmt.stmt, 1, deviceName);
     stepDone(db_, stmt.stmt);
 }
 
 void SQLiteManager::replaceDataPointsForDevice(const Device& device, const std::vector<DataPoint>& points) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     execute("BEGIN TRANSACTION;");
     try {
         {
@@ -223,6 +231,7 @@ void SQLiteManager::replaceDataPointsForDevice(const Device& device, const std::
 }
 
 std::vector<Device> SQLiteManager::getDevices() const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_,
                    "SELECT Id, Name, IpAddr, Port, SampleInterval, Status, Model, ModelVersion, DriverPath "
                    "FROM Device ORDER BY Id;");
@@ -246,6 +255,7 @@ std::vector<Device> SQLiteManager::getDevices() const {
 }
 
 std::vector<DataPoint> SQLiteManager::getDataPointsByDeviceName(const std::string& deviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_,
                    "SELECT Id, Did, DName, NamePath, ItemPath, ItemName, ItemDescription "
                    "FROM DataPoint WHERE DName = ? ORDER BY Id;");
@@ -268,6 +278,7 @@ std::vector<DataPoint> SQLiteManager::getDataPointsByDeviceName(const std::strin
 }
 
 void SQLiteManager::insertResources(const std::vector<ResourceRecord>& records) {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     execute("BEGIN TRANSACTION;");
     try {
         Statement stmt(db_,
@@ -296,6 +307,7 @@ void SQLiteManager::insertResources(const std::vector<ResourceRecord>& records) 
 }
 
 std::vector<ResourceRecord> SQLiteManager::getLatestResources(const std::string& deviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_,
                    "SELECT DeviceName, DataItemNamePath, Data, DevTime, SvrTime, "
                    "DataItemPath, DataItemName, DataItemDescription "
@@ -344,6 +356,7 @@ void SQLiteManager::initializeSchema(const std::string& initSqlPath) {
 }
 
 void SQLiteManager::execute(const std::string& sql) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     char* errorMessage = nullptr;
     if (sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &errorMessage) != SQLITE_OK) {
         std::string message = errorMessage != nullptr ? errorMessage : "unknown sqlite error";
@@ -353,6 +366,7 @@ void SQLiteManager::execute(const std::string& sql) const {
 }
 
 bool SQLiteManager::hasRows(const std::string& sql) const {
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
     Statement stmt(db_, sql);
     return sqlite3_step(stmt.stmt) == SQLITE_ROW;
 }

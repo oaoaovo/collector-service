@@ -6,6 +6,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 
@@ -132,6 +133,25 @@ std::string toJson(const CommandResult& result) {
     return out.str();
 }
 
+std::string toJson(const std::vector<DeviceStatus>& statuses, const std::string& mid) {
+    std::ostringstream out;
+    out << "{\"code\":200,\"msg\":\"ok\",\"mid\":\"" << escapeJson(mid) << "\",\"data\":[";
+    for (std::size_t i = 0; i < statuses.size(); ++i) {
+        if (i > 0) {
+            out << ",";
+        }
+        const auto& status = statuses[i];
+        out << "{\"device_name\":\"" << escapeJson(status.deviceName)
+            << "\",\"connected\":" << (status.connected ? "true" : "false")
+            << ",\"machineConnected\":" << (status.machineConnected ? "true" : "false")
+            << ",\"failCount\":" << status.failCount
+            << ",\"lastSuccessTime\":" << status.lastSuccessTime
+            << ",\"error\":\"" << escapeJson(status.error) << "\"}";
+    }
+    out << "]}";
+    return out.str();
+}
+
 CommandResult errorResult(const std::string& mid, const std::string& msg) {
     CommandResult result;
     result.code = 500;
@@ -164,6 +184,15 @@ std::string CommandProcessor::handle(const std::string& requestText) {
         }
         if (category == "stop_device_collect") {
             return toJson(handleStopDeviceCollect(requestText, mid));
+        }
+        if (category == "start_all") {
+            return toJson(handleStartAll(mid));
+        }
+        if (category == "stop_all") {
+            return toJson(handleStopAll(mid));
+        }
+        if (category == "get_status") {
+            return toJson(dataTask_.getStatus(), mid);
         }
         return toJson(errorResult(mid, "unknown cmd category: " + category));
     } catch (const std::exception& ex) {
@@ -245,4 +274,22 @@ CommandResult CommandProcessor::handleStartDeviceCollect(const std::string& requ
 
 CommandResult CommandProcessor::handleStopDeviceCollect(const std::string& requestText, const std::string& mid) {
     return dataTask_.stopDeviceCollect(extractStringField(requestText, "device_name"), mid);
+}
+
+CommandResult CommandProcessor::handleStartAll(const std::string& mid) {
+    dataTask_.startAll();
+
+    CommandResult result;
+    result.mid = mid;
+    result.msg = "all online device collections started";
+    return result;
+}
+
+CommandResult CommandProcessor::handleStopAll(const std::string& mid) {
+    dataTask_.stopAll();
+
+    CommandResult result;
+    result.mid = mid;
+    result.msg = "all device collections stopped";
+    return result;
 }

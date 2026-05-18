@@ -36,6 +36,7 @@ struct ResourceRecord {
 };
 
 struct DeviceStatus {
+    std::string deviceName;
     bool connected = false;
     bool machineConnected = false;
     int failCount = 0;
