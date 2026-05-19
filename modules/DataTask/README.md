@@ -2,15 +2,15 @@
 
 ## Responsibility
 
-Manual single-device collection chain and response processor.
+Multi-device collection scheduling, response processing, status tracking, and cleanup triggering.
 
 ## Boundary
 
-Active in Phase 5 and extended by the requested command retrofit. This module may run one manual collection pass for a named device.
+Active through Phase 8. This module may run independent background collection loops for online devices and trigger non-fatal Resources cleanup after successful collection.
 
 ## Current State
 
-`include/DataTask.h` and `src/DataTask.cpp` implement manual start/stop entry points, DataPoint auto-initialization, and the single-device collection chain.
+`include/DataTask.h` and `src/DataTask.cpp` implement start/stop entry points, DataPoint auto-initialization, per-device worker threads, DeviceStatus tracking, and periodic cleanup triggering.
 
 ## Allowed Changes
 
@@ -19,21 +19,20 @@ Active in Phase 5 and extended by the requested command retrofit. This module ma
 
 ## Forbidden Changes
 
-- Do not add multi-device concurrent scheduling.
-- Do not add background collection loops.
 - Do not implement HTTP APIs.
 - Do not add complex retry behavior.
 
 ## Design Rules
 
-DataTask validates the device, initializes DataPoint from Device.model when needed, sends query through DriverClient, parses MockDriverServer response, inserts Resources, and updates a basic DeviceStatus vector.
+DataTask validates the device, initializes DataPoint from Device.model when needed, sends query through DriverClient, parses MockDriverServer response, inserts Resources, updates DeviceStatus, and triggers cleanup through SQLiteManager. Cleanup failure must be logged but must not change the successful collection result.
 
 ## Acceptance
 
-Manual `start_device_collect` initializes model points and inserts Resources for those paths after one collection pass.
+`start_device_collect` starts one named worker. Successful collection clears `failCount` and `error`; failed collection increments only that device's `failCount`. Cleanup keeps Resources bounded without stopping the worker on cleanup errors.
 
 ## Change Log
 
+- 2026-05-19: Added Phase 8 cleanup triggering and stage-specific error reporting.
 - 2026-05-14: Added manual named-device collection and model-based DataPoint initialization.
 - 2026-05-14: Activated Phase 5 DataTask implementation.
 - 2026-05-14: Added Phase 1 inactive module README.

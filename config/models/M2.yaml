@@ -1,0 +1,417 @@
+Device:
+  InfoVer: 1.0.1
+  Name: DJGS
+  Description: 电加工所NcLinkV2
+  StdName: MachineTool
+  StdClass: Machine
+  CommCapable: true
+  SafeInterval: 100
+  Properties:
+    Warranty: 12Months
+    UserManual: http://nc-link.org.cn/DEV01.html
+    Hotline: +86-40000000
+    Mailbox: service@nc-link.org.cn
+  Component:
+    - Name: Position
+      Description: 机床位置与坐标系统
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: AbsCoord
+          Type: float64
+          ReadOnly: true
+          Dimension: 3
+          Unit: ''
+          Description: 机床机械坐标位置{X,Y,Z}
+        - Name: CurCoordinate
+          Type: uint16
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 当前坐标系
+    - Name: MachState
+      Description: 机床模式状态组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: Status
+          Type: uint32
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床状态信息:0停止,1运行,2暂停
+        - Name: AbsInc
+          Type: uint16
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床当前ABS/INC状态,既G90/G91状态
+    - Name: Alarm
+      Description: 报警组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: AlarmInfo
+          Type: uint8
+          ReadOnly: true
+          Dimension: 6
+          Unit: ''
+          Description: 机床异常报警信息
+    - Name: SystemTime
+      Description: 系统时间组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: RunTime
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床最后运行时间
+        - Name: CndTime
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床最后加工条件的加工时间
+        - Name: CutTime
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床最后总加工时间
+        - Name: G04Time
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床G04延时的剩余时间
+        - Name: G85Time
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床G85定时的剩余时间
+    - Name: CuttingTool
+      Description: 刀具管理组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: GetCurrToolNo
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床当前工具号
+    - Name: PowerInfo
+      Description: 机床电源信息组件
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DataItem:
+        - Name: PowerIn
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床Power状态
+        - Name: Voltage
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床当前加工电压
+        - Name: Current
+          Type: uint64
+          ReadOnly: true
+          Dimension: 1
+          Unit: ''
+          Description: 机床当前加工电流
+      DevFunc:
+        - Name: GetError
+          Description: 获取机床报警号
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint32}'
+          RtnDesc: rtn1:机床报警号
+        - Name: GetErrMsg
+          Description: 获取机床报警信息
+          Arguments: '{arg1:uint32}'
+          ArguDesc: arg1:报警号
+          Returns: '{rtn1:str}'
+          RtnDesc: rtn1:机床报警号对应的报警信息字符串
+        - Name: GetComment
+          Description: 获取机床提示号
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint32}'
+          RtnDesc: rtn1:机床提示号
+        - Name: GetComMsg
+          Description: 获取机床提示信息
+          Arguments: '{arg1:uint32}'
+          ArguDesc: arg1:提示号
+          Returns: '{rtn1:str}'
+          RtnDesc: rtn1:机床提示号对应的报警提示信息字符串
+        - Name: GetPosition
+          Description: 获取机床坐标系位置
+          Arguments: '{arg1:uint8,arg2:uint16}'
+          ArguDesc: arg1:指定轴(1:X轴,2:Y轴,3:Z轴,4:U轴)|arg2:指定坐标系,从54到959共60个坐标系
+          Returns: '{rtn1:float64}'
+          RtnDesc: rtn1:坐标
+        - Name: GetPositionInfo
+          Description: 获取机床坐标系信息
+          Arguments: '{arg1:uint8}'
+          ArguDesc: arg1:指定轴(1:X轴,2:Y轴,3:Z轴,4:U轴)
+          Returns: >-
+            {rtn1:float64,rtn2:float64,rtn3:uint8,rtn4:uint8,rtn5:uint8,rtn6:str}
+          RtnDesc: rtn1:坐标位置数据|rtn2:机械位置数据|rtn4:位置数据小数点位数|rtn5:轴类型|rtn6:轴名称
+        - Name: GetMState
+          Description: 获取机床运行状态
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint8[16]}'
+          RtnDesc: >-
+            rtn1:数组下标0~15分别表示状态[油温附子,接触感知,高压电路,油泵启停,干加工开启,单步执行开启,自动切断电源,G11/12状态,G24/G25状态,散热器,暂停,油槽升降,X轴镜像,Y轴镜像,Z轴镜像,XY轴交换]
+        - Name: GetDispNc
+          Description: 获取机床执行NC代码信息
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint64[8],rtn2:str[256]}'
+          RtnDesc: rtn1:每个Q调用文件的行号|rtn2:当前执行的NC代码
+        - Name: GetCondition
+          Description: 获取机床加工条件信息
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint64[23]}'
+          RtnDesc: rtn1:加工条件信息
+        - Name: GetQscNestCnt
+          Description: 获取机床Q指令调用层数
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint64}'
+          RtnDesc: rtn1:Q指令调用层数
+        - Name: GetM98LoopCnt
+          Description: 获取机床M98子程序调用总次数
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint64}'
+          RtnDesc: rtn1:M98子程序调用总次数
+        - Name: GetM98CurrCnt
+          Description: 获取机床M98子程序当前执行次数
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint64}'
+          RtnDesc: rtn1:M98子程序当前执行次数
+        - Name: GetVersion
+          Description: 获取机床软件版本号
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:str,rtn2:str,rtn3:str}'
+          RtnDesc: rtn1:HMI版本|rtn2:SYS版本|rtn3:RMC版本
+    - Name: MachineHValue
+      Description: 机床H变量读取
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DevFunc:
+        - Name: GetLocalHosei
+          Description: 获取机床H局部变量
+          Arguments: '{arg1:uint32}'
+          ArguDesc: arg1:指定H变量号,范围在0~999之间
+          Returns: '{rtn1:uint64}'
+          RtnDesc: rtn1:变量数据
+        - Name: SetLocalHosei
+          Description: 设置机床H局部变量
+          Arguments: '{arg1:uint32,arg2:int64,arg3:str[8]}'
+          ArguDesc: arg1:指定H变量号,范围在0~999之间,arg2:指定H变量数据,arg3:指定执行程序名称,最大8个字符
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: GetGlobalHosei
+          Description: 获取机床H全局变量
+          Arguments: '{arg1:uint32}'
+          ArguDesc: arg1:指定H变量号
+          Returns: '{rtn1:int64}'
+          RtnDesc: rtn1:变量数据
+        - Name: SetGlobalHosei
+          Description: 设置机床H全局变量
+          Arguments: '{arg1:uint32,arg2:int64}'
+          ArguDesc: arg1:指定H变量号,范围在0~999之间,arg2:指定H变量数据
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+    - Name: NcCtrl
+      Description: 控制机床启动,暂停,停止,复位
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DevFunc:
+        - Name: ReqNcStart
+          Description: 请求机床启动
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: ReqNcHalt
+          Description: 请求机床暂停
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: ReqNcStop
+          Description: 请求机床停止
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: ReqNcReset
+          Description: 请求机床复位
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+    - Name: NcPrg
+      Description: NC程序管理功能:文件夹与文件的各种操作,NC程序的操作,主程序的设置等功能
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DevFunc:
+        - Name: PrgAddDir
+          Description: 创建一个文件夹在机床文件系统中
+          Arguments: '{arg1:str}'
+          ArguDesc: arg1:文件夹路径路径格式(EDM_HDD\User01\xxxx),(xxxx)为要创建文件夹的名称
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgDelAll
+          Description: 在机床文件系统中,删除一个文件夹
+          Arguments: '{arg1:str}'
+          ArguDesc: arg1:文件夹路径路径格式(EDM_HDD\User01\xxxx),(xxxx)为要删除的文件夹的名称
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgDel
+          Description: 在机床文件系统中,删除一个nc文件
+          Arguments: '{arg1:str}'
+          ArguDesc: arg1:文件夹路径路径格式(EDM_HDD\User01\xxxx.nc),(xxxx.nc)为要删除的文件名称
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgCopy
+          Description: 在机床文件系统中,拷贝文件夹中的NC程序到另一个文件夹中
+          Arguments: '{arg1:str,arg2:str}'
+          ArguDesc: >-
+            arg1:源文件路径,路径格式(EDM_HDD\User01\xxxx.nc),arg2:目的文件路径,格式(EDM_HDD\User01\xxxx.nc)
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgUpload
+          Description: 上传一个NC程序到机床文件系统中
+          Arguments: '{arg1:str,arg2:str}'
+          ArguDesc: >-
+            arg1:目的地文件路径,路径格式(EDM_HDD\User01\xxxx),(xxxx)为文件上传后保存的目录,arg2:要上传的本地计算机文件路径,格式(EDM_HDD\User01\xxxx.nc)
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgDownload
+          Description: 下载一个NC程序到机床文件系统中
+          Arguments: '{arg1:str,arg2:str}'
+          ArguDesc: >-
+            arg1:要下载的文件路径,路径格式(EDM_HDD\User01\xxxx.nc),(xxxx)为文件上传后保存的目录,arg2:指向本地计算机中的文件路径,格式(C:\NCPrg\Download),Download为下载后文件保存的目录
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: PrgReadList
+          Description: 读取机床文件系统的目录列表
+          Arguments: '{arg1:str}'
+          ArguDesc: arg1:要读取的文件夹路径,路径格式(EDM_HDD\User01\xxxx),(xxxx)为读取的文件名称
+          Returns: '{rtn1:str}'
+          RtnDesc: rtn1:列表信息
+        - Name: PrgSetMain
+          Description: 设置机床主程序
+          Arguments: '{arg1:str}'
+          ArguDesc: arg1:文件路径,路径格式(EDM_HDD\User01\xxxx.nc),(xxxx.nc)为设置的主程序名称
+          Returns: '{rtn1:str}'
+          RtnDesc: rtn1:列表信息
+        - Name: PrgGetSelMain
+          Description: 获取当前主程序
+          Arguments: '{arg1:str}'
+          ArguDesc: 'arg1:'
+          Returns: '{rtn1:str}'
+          RtnDesc: rtn1:当前主程序
+    - Name: MachineToolData
+      Description: 机床刀具补正数据的读取与设置
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DevFunc:
+        - Name: GetToolOffset
+          Description: 获取机床刀具补正数据
+          Arguments: '{arg1:uint16}'
+          ArguDesc: arg1:指定的刀具编号(1到16把刀)
+          Returns: '{rtn1:uint64[4]}'
+          RtnDesc: rtn1:指定各轴的补正数据
+        - Name: SetToolOffset
+          Description: 设置机床刀具补正数据
+          Arguments: '{arg1:uint16,rtn2:uint64[4]}'
+          ArguDesc: arg1:指定的刀具编号(1到16把刀),arg2:指定刀具编号的补正数据
+          Returns: '{rtn1:int}'
+          RtnDesc: rtn1:0成功,其他值失败
+    - Name: MachineCtrl
+      Description: 机床机械装置状态获取与控制
+      StdName: Machining Center CNC
+      StdClass: CNC
+      DevFunc:
+        - Name: CtrlFrontDoor
+          Description: 控制机床前门打开或关闭
+          Arguments: '{arg1:bool}'
+          ArguDesc: arg1:true打开,false关闭
+          Returns: '{rtn1:int32}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: CtrlSpindleChuck
+          Description: 控制机床主轴夹头松开或锁紧
+          Arguments: '{arg1:bool}'
+          ArguDesc: arg1:true松开,false锁紧
+          Returns: '{rtn1:int32}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: CtrlWorkbenChunk
+          Description: 控制机床工作台松开或锁紧
+          Arguments: '{arg1:bool}'
+          ArguDesc: arg1:true松开,false锁紧
+          Returns: '{rtn1:int32}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: CtrlMagaginTurn
+          Description: 控制机床刀具库转动到指定刀号
+          Arguments: '{arg1:uint32}'
+          ArguDesc: arg1:指定刀具号
+          Returns: '{rtn1:int32}'
+          RtnDesc: rtn1:0成功,其他值失败
+        - Name: StatFrontDoor
+          Description: 获取机床前门打开或关闭到位状态
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0打开或关闭过程中,1打开到位,2关闭到位
+        - Name: StatSpindleChuck
+          Description: 获取机床主轴夹头松开或锁紧到位状态
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0松开或锁紧过程中,1松开到位,2锁紧到位
+        - Name: StatWorkbenChuck
+          Description: 获取机床工作台松开或锁紧到位状态
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0松开或锁紧过程中,1松开到位,2锁紧到位
+        - Name: StatMagaginTurn
+          Description: 获取机床刀具库转动到位状态
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0转动未到位,1转动到位
+        - Name: StatMagaginExistTool
+          Description: 获取机床刀具库当前有无刀具
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0无刀具,1有刀具
+        - Name: StatSpindleExistTool
+          Description: 获取机床主轴夹头有无刀具
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0无刀具,1有刀具
+        - Name: StatWorkbenExistPiece
+          Description: 获取机床工作台夹头有无工件
+          Arguments: '{}'
+          ArguDesc: ''
+          Returns: '{rtn1:uint16}'
+          RtnDesc: rtn1:0无工件,1有工件

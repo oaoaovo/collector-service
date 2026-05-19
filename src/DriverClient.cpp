@@ -46,7 +46,8 @@ bool DriverClient::connect() {
         Logger::info("DriverClient connected to ws://" + host_ + ":" + std::to_string(port_));
         return true;
     } catch (const std::exception& ex) {
-        Logger::error(std::string("DriverClient connect failed: ") + ex.what());
+        Logger::error("DriverClient connect failed for ws://" + host_ + ":" +
+                      std::to_string(port_) + ": " + ex.what());
         impl_->connected = false;
         impl_ = std::make_unique<Impl>();
         return false;
@@ -66,7 +67,8 @@ std::string DriverClient::sendQuery(const std::string& queryText) {
         return beast::buffers_to_string(buffer.data());
     } catch (const std::exception& ex) {
         close();
-        throw std::runtime_error(std::string("DriverClient sendQuery failed: ") + ex.what());
+        throw std::runtime_error("DriverClient sendQuery failed for ws://" + host_ + ":" +
+                                 std::to_string(port_) + ": " + ex.what());
     }
 }
 
@@ -79,7 +81,8 @@ void DriverClient::close() {
         beast::error_code ec;
         impl_->ws.close(websocket::close_code::normal, ec);
         if (ec) {
-            Logger::warn("DriverClient close warning: " + ec.message());
+            Logger::warn("DriverClient close warning for ws://" + host_ + ":" +
+                         std::to_string(port_) + ": " + ec.message());
         }
     }
     impl_ = std::make_unique<Impl>();

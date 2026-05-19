@@ -16,6 +16,7 @@ add_executable(collector-service
     src/ModelParser.cpp
     src/ModelRepository.cpp
     src/CommandProcessor.cpp
+    src/HttpServer.cpp
 )
 
 target_include_directories(collector-service

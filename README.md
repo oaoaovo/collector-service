@@ -2,15 +2,15 @@
 
 ## Responsibility
 
-This project is a C++17 industrial device data collection service. The current build adds command-driven device management, model repository loading, model-based DataPoint initialization, and multi-device background collection.
+This project is a C++17 industrial device data collection service. The current build adds command-driven device management, model repository loading, model-based DataPoint initialization, multi-device background collection, and HTTP query/control APIs.
 
 ## Boundary
 
-The collector service owns a SQLite-backed device store, can create/update/delete devices through command JSON, can initialize DataPoint rows from a model definition, can run a mock driver WebSocket server, and can run independent background collection tasks for multiple online devices. HTTP query APIs are intentionally not implemented in Phase 6.
+The collector service owns a SQLite-backed device store, can create/update/delete devices through command JSON, can initialize DataPoint rows from a model definition, can run a mock driver WebSocket server, can run independent background collection tasks for multiple online devices, and can expose those operations through a local HTTP server.
 
 ## Current State
 
-Active scope: Phase 6 console command mode, command-driven device management, model-based DataPoint initialization, multi-device collection threads, and per-device runtime status.
+Active scope: Phase 8 stability hardening, HTTP server mode, command-driven device management, model-based DataPoint initialization, multi-device collection threads, per-device runtime status, and latest resource queries.
 
 Implemented:
 
@@ -33,6 +33,21 @@ Implemented:
 - `start_all` starts independent collection workers for all online devices
 - `stop_all` stops all active collection workers
 - `get_status` returns the latest tracked status for each device
+- `HttpServer` exposes local JSON APIs for health, device listing, command dispatch, task start/stop, status, and latest Resources queries
+- `SQLiteManager` can clean Resources history per device while preserving each device's newest rows
+- `DataTask` triggers per-device Resources cleanup after successful collection without failing the collection loop if cleanup fails
+- collection errors update only the affected device status with `failCount` and a stage-specific error message
+
+## Resources Cleanup
+
+Phase 8 keeps Resources growth bounded without changing the table schema. The default retention policy is:
+
+```text
+maxRowsPerDevice = 5000
+cleanupIntervalMs = 60000
+```
+
+Each device cleanup keeps the newest rows for that `DeviceName`, ordered by `SvrTime DESC, Id DESC`. Cleanup only deletes from `Resources`; it never deletes `Device` or `DataPoint` rows. `DataTask` attempts cleanup after successful collection at the configured interval, and cleanup failure is logged as a warning without incrementing the device `failCount`.
 
 ## Model Files
 
@@ -58,6 +73,18 @@ From this directory:
 cmake -S . -B build
 cmake --build build
 ./build/collector-service --console
+```
+
+HTTP mode:
+
+```bash
+./build/collector-service --http
+```
+
+The default HTTP endpoint is `http://127.0.0.1:8080`. Pass a port to override it:
+
+```bash
+./build/collector-service --serve-http 18080
 ```
 
 Console commands are one-line JSON. Create an online device first:
@@ -114,8 +141,26 @@ One-shot command-file mode remains available:
 
 In command-file mode the mock driver starts only for `start_device_collect` and `start_all` commands. A start command keeps the collection process running until Enter is pressed, then active tasks and the mock server stop. The collection path never falls back to `127.0.0.1:9001`; if a device says `IpAddr=x` and `Port=y`, `DriverClient` connects only to `ws://x:y`.
 
+## HTTP API
+
+```bash
+curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8080/devices
+curl http://127.0.0.1:8080/status
+curl "http://127.0.0.1:8080/status?device=devA"
+curl "http://127.0.0.1:8080/latest?device=devA"
+curl -X POST http://127.0.0.1:8080/tasks/start
+curl -X POST "http://127.0.0.1:8080/tasks/start?device=devA"
+curl -X POST http://127.0.0.1:8080/tasks/stop
+curl -X POST "http://127.0.0.1:8080/tasks/stop?device=devA"
+```
+
+Raw command JSON can also be sent through `POST /commands`; the request body is the same one-line command JSON used by console mode.
+
 ## Change Log
 
+- 2026-05-19: Phase 7 HTTP server added with local JSON APIs for commands, task control, status, devices, health, and latest Resources.
+- 2026-05-19: Phase 8 Resources cleanup and collection stability hardening added.
 - 2026-05-18: Added Phase 6 multi-device DataTask scheduling with per-device worker threads, stop flags, status tracking, and `start_all`/`stop_all`/`get_status` commands.
 - 2026-05-18: Added `Device.Status`, online-only collection, single named periodic collection loop, fast stop checks, and removed local mock fallback from `DataTask`.
 - 2026-05-15: Phase 5.5 console mode added; startup demo and DeviceA seed behavior removed.

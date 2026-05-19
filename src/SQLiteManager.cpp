@@ -332,6 +332,55 @@ std::vector<ResourceRecord> SQLiteManager::getLatestResources(const std::string&
     return records;
 }
 
+void SQLiteManager::cleanupResources(int maxRowsPerDevice) {
+    if (maxRowsPerDevice <= 0) {
+        return;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
+    execute("BEGIN TRANSACTION;");
+    try {
+        Statement stmt(db_,
+                       "DELETE FROM Resources WHERE Id IN ("
+                       "SELECT Id FROM ("
+                       "SELECT Id, ROW_NUMBER() OVER (PARTITION BY DeviceName ORDER BY SvrTime DESC, Id DESC) AS rn "
+                       "FROM Resources"
+                       ") WHERE rn > ?"
+                       ");");
+        sqlite3_bind_int(stmt.stmt, 1, maxRowsPerDevice);
+        stepDone(db_, stmt.stmt);
+        execute("COMMIT;");
+    } catch (...) {
+        execute("ROLLBACK;");
+        throw;
+    }
+}
+
+void SQLiteManager::cleanupResourcesForDevice(const std::string& deviceName, int maxRows) {
+    if (maxRows <= 0 || deviceName.empty()) {
+        return;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(dbMutex_);
+    execute("BEGIN TRANSACTION;");
+    try {
+        Statement stmt(db_,
+                       "DELETE FROM Resources WHERE Id IN ("
+                       "SELECT Id FROM ("
+                       "SELECT Id, ROW_NUMBER() OVER (ORDER BY SvrTime DESC, Id DESC) AS rn "
+                       "FROM Resources WHERE DeviceName = ?"
+                       ") WHERE rn > ?"
+                       ");");
+        bindText(stmt.stmt, 1, deviceName);
+        sqlite3_bind_int(stmt.stmt, 2, maxRows);
+        stepDone(db_, stmt.stmt);
+        execute("COMMIT;");
+    } catch (...) {
+        execute("ROLLBACK;");
+        throw;
+    }
+}
+
 void SQLiteManager::openDatabase() {
     const auto parentPath = std::filesystem::path(databasePath_).parent_path();
     if (!parentPath.empty()) {

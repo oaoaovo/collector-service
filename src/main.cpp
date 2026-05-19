@@ -1,5 +1,6 @@
 #include "CommandProcessor.h"
 #include "DataTask.h"
+#include "HttpServer.h"
 #include "Logger.h"
 #include "ModelRepository.h"
 #include "MockDriverServer.h"
@@ -32,6 +33,8 @@ std::string readTextFile(const std::string& path) {
 void printUsage() {
     Logger::info("usage:");
     Logger::info("  collector-service --console");
+    Logger::info("  collector-service --http [port]");
+    Logger::info("  collector-service --serve-http [port]");
     Logger::info("  collector-service --cmd <json>");
     Logger::info("  collector-service --cmd-file <path>");
 }
@@ -113,6 +116,25 @@ int main(int argc, char* argv[]) {
             dataTask.stopAll();
             mockDriverServer.stop();
             Logger::info("console mode stopped");
+            return 0;
+        }
+
+        if (argc >= 2 && (std::string(argv[1]) == "--http" || std::string(argv[1]) == "--serve-http")) {
+            const int httpPort = argc >= 3 ? std::stoi(argv[2]) : 8080;
+            MockDriverServer mockDriverServer(kMockDriverHost, kMockDriverPort);
+            mockDriverServer.start();
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+            HttpServer httpServer("127.0.0.1", httpPort, sqliteManager, dataTask, commandProcessor);
+            httpServer.start();
+            Logger::info("http mode started. press Enter to stop.");
+            std::string stopLine;
+            std::getline(std::cin, stopLine);
+
+            dataTask.stopAll();
+            httpServer.stop();
+            mockDriverServer.stop();
+            Logger::info("http mode stopped");
             return 0;
         }
 

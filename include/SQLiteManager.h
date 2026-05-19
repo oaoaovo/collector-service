@@ -29,6 +29,8 @@ public:
     std::vector<DataPoint> getDataPointsByDeviceName(const std::string& deviceName) const;
     void insertResources(const std::vector<ResourceRecord>& records);
     std::vector<ResourceRecord> getLatestResources(const std::string& deviceName) const;
+    void cleanupResources(int maxRowsPerDevice);
+    void cleanupResourcesForDevice(const std::string& deviceName, int maxRows);
 
 private:
     void openDatabase();

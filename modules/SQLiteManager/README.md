@@ -2,15 +2,15 @@
 
 ## Responsibility
 
-Owner of SQLite connection, schema initialization, and database access.
+Owner of SQLite connection, schema initialization, database access, and Resources cleanup.
 
 ## Boundary
 
-Active in Phase 2. This module may initialize SQLite and expose basic Device/DataPoint/Resources access.
+Active through Phase 8. This module initializes SQLite, exposes Device/DataPoint/Resources access, and owns Resources cleanup SQL.
 
 ## Current State
 
-`include/SQLiteManager.h` and `src/SQLiteManager.cpp` implement the Phase 2 database layer.
+`include/SQLiteManager.h` and `src/SQLiteManager.cpp` implement the database layer and Phase 8 per-device Resources retention.
 
 ## Allowed Changes
 
@@ -23,17 +23,18 @@ Active in Phase 2. This module may initialize SQLite and expose basic Device/Dat
 - Do not implement DataTask collection loops.
 - Do not implement WebSocket communication.
 - Do not implement HTTP APIs.
-- Do not add resource cleanup policies before Phase 9.
+- Do not move Resources cleanup SQL into DataTask or HTTP code.
 
 ## Design Rules
 
-SQL access must remain centralized in SQLiteManager. Business modules should not scatter raw SQL when they arrive in later phases.
+SQL access must remain centralized in SQLiteManager. Resources cleanup uses transactions and preserves the newest rows per device by `SvrTime DESC, Id DESC`.
 
 ## Acceptance
 
-Program startup creates `data/collector.sqlite` and creates `Device`, `DataPoint`, and `Resources`. Devices are created explicitly through commands.
+Program startup creates `data/collector.sqlite` and creates `Device`, `DataPoint`, and `Resources`. Cleanup can trim Resources globally or for one device without deleting Device/DataPoint rows.
 
 ## Change Log
 
+- 2026-05-19: Added Phase 8 Resources cleanup APIs.
 - 2026-05-14: Activated Phase 2 SQLiteManager implementation.
 - 2026-05-14: Added Phase 1 inactive module README.

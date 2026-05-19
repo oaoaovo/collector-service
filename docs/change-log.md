@@ -1,5 +1,17 @@
 # Change Log
 
+## 2026-05-19
+
+- Implemented Phase 7 `HttpServer` using Boost.Beast.
+- Added `--http` and `--serve-http` startup modes.
+- Added local JSON APIs for `/health`, `/devices`, `/status`, `/latest`, `/commands`, `/tasks/start`, and `/tasks/stop`.
+- Routed HTTP task controls through the existing `CommandProcessor`/`DataTask` path.
+- Implemented Phase 8 Resources cleanup with per-device retention.
+- Added `SQLiteManager::cleanupResources()` and `SQLiteManager::cleanupResourcesForDevice()`.
+- Added DataTask cleanup triggering after successful collection with non-fatal cleanup warnings.
+- Added stage-specific DataTask error logging and status error messages.
+- Hardened DriverClient error messages with driver endpoint context.
+
 ## 2026-05-18
 
 - Implemented Phase 6 multi-device `DataTask` scheduling with per-device worker threads, stop flags, and status records.

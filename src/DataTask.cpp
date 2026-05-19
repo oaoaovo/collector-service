@@ -16,6 +16,9 @@
 
 namespace {
 
+constexpr int kMaxRowsPerDevice = 5000;
+constexpr int kCleanupIntervalMs = 60000;
+
 std::string escapeJson(const std::string& value) {
     std::string escaped;
     escaped.reserve(value.size());
@@ -421,43 +424,67 @@ void DataTask::runDeviceTask(Device device, std::shared_ptr<std::atomic_bool> st
     DeviceStatus status;
     status.deviceName = device.name;
     int failCount = 0;
+    auto lastCleanupTime = std::chrono::steady_clock::now() - std::chrono::milliseconds(kCleanupIntervalMs);
 
     while (!*stopFlag) {
+        std::string stage = "prepare";
         try {
+            stage = "loadDevice";
             device = sqliteManager_.getDeviceByName(device.name);
             if (device.status == 0) {
                 throw std::runtime_error("device is offline: " + device.name);
             }
 
+            stage = "loadDataPoints";
             auto points = sqliteManager_.getDataPointsByDeviceName(device.name);
             if (points.empty()) {
+                stage = "initDataPoints";
                 const auto initResult = initDataPointsByDevice(device.name, "");
                 if (!initResult.ok()) {
                     throw std::runtime_error(initResult.msg);
                 }
+                stage = "loadDataPoints";
                 points = sqliteManager_.getDataPointsByDeviceName(device.name);
             }
             if (points.empty()) {
                 throw std::runtime_error("device has no configured data points: " + device.name);
             }
 
+            stage = "buildQuery";
             const auto cid = makeCid(device.name);
             const auto query = buildQuery(cid, points);
             Logger::info("DataTask query: " + query);
 
+            stage = "connect";
             DriverClient driverClient(device.ip, device.port);
             status.connected = driverClient.connect();
             if (!status.connected) {
-                throw std::runtime_error("DriverClient connect failed for " + device.name);
+                throw std::runtime_error("DriverClient connect failed for " + device.name +
+                                         " at ws://" + device.ip + ":" + std::to_string(device.port));
             }
 
+            stage = "sendQuery";
             const auto response = driverClient.sendQuery(query);
             if (response.empty()) {
                 throw std::runtime_error("response is empty");
             }
             Logger::info("DataTask response: " + response);
+            stage = "processResponse";
             processResponse(device, points, response);
+            stage = "close";
             driverClient.close();
+
+            const auto now = std::chrono::steady_clock::now();
+            if (now - lastCleanupTime >= std::chrono::milliseconds(kCleanupIntervalMs)) {
+                try {
+                    sqliteManager_.cleanupResourcesForDevice(device.name, kMaxRowsPerDevice);
+                    lastCleanupTime = now;
+                    Logger::info("DataTask cleanupResources succeeded for " + device.name +
+                                 ", maxRowsPerDevice=" + std::to_string(kMaxRowsPerDevice));
+                } catch (const std::exception& ex) {
+                    Logger::warn("DataTask cleanupResources failed for " + device.name + ": " + ex.what());
+                }
+            }
 
             failCount = 0;
             status.connected = true;
@@ -472,9 +499,10 @@ void DataTask::runDeviceTask(Device device, std::shared_ptr<std::atomic_bool> st
             status.connected = false;
             status.machineConnected = false;
             status.failCount = failCount;
-            status.error = ex.what();
+            status.error = stage + " failed: " + ex.what();
             setLatestStatus(status);
-            Logger::error("DataTask collection failed for " + device.name + ": " + ex.what());
+            Logger::error("DataTask collection failed for " + device.name +
+                          ", stage=" + stage + ": " + ex.what());
             if (failCount >= 5) {
                 Logger::error("DataTask stopped after 5 consecutive failures for " + device.name);
                 break;
