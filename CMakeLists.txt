@@ -8,7 +8,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(collector-service
     src/main.cpp
-    src/Logger.cpp
+    src/util/Logger.cpp
+    src/util/JsonUtil.cpp
+    src/util/TimeUtil.cpp
+    src/db/SQLiteConnection.cpp
+    src/db/SQLiteStatement.cpp
+    src/db/SQLiteTransaction.cpp
+    src/db/DeviceRepository.cpp
+    src/db/DataPointRepository.cpp
+    src/db/ResourceRepository.cpp
+    src/db/ResourceRetentionService.cpp
     src/SQLiteManager.cpp
     src/MockDriverServer.cpp
     src/DriverClient.cpp
@@ -16,6 +25,15 @@ add_executable(collector-service
     src/ModelParser.cpp
     src/ModelRepository.cpp
     src/CommandProcessor.cpp
+    src/command/CommandParser.cpp
+    src/command/CommandJsonSerializer.cpp
+    src/http/HttpResponse.cpp
+    src/http/HttpJsonSerializer.cpp
+    src/http/HttpCommandAdapter.cpp
+    src/http/HttpRouter.cpp
+    src/task/CollectionQueryBuilder.cpp
+    src/task/CollectionResponseParser.cpp
+    src/task/DeviceStatusStore.cpp
     src/HttpServer.cpp
 )
 

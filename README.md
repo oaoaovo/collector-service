@@ -12,6 +12,28 @@ The collector service owns a SQLite-backed device store, can create/update/delet
 
 Active scope: Phase 8 stability hardening, HTTP server mode, command-driven device management, model-based DataPoint initialization, multi-device collection threads, per-device runtime status, and latest resource queries.
 
+## Architecture Map
+
+```text
+include/
+  util/       Shared logging, JSON text helpers, and time helpers
+  command/    Command field parsing and command JSON serialization
+  db/         SQLite RAII wrappers, repositories, and retention cleanup
+  task/       Collection query building, response parsing, status state, and workers
+  http/       HTTP response helpers, serializers, command adapter, and router
+  *.h         Facade headers kept for service-level callers
+
+src/
+  util/       Utility implementations
+  command/    Command helper implementations
+  db/         SQLite helper and repository implementations
+  task/       Collection helper implementations
+  http/       HTTP helper and route implementations
+  *.cpp       Startup and facade implementations
+```
+
+`CommandProcessor`, `HttpServer`, `DataTask`, and `SQLiteManager` now act as facades. Parsing, JSON formatting, routing, worker behavior, SQL handle management, repository access, and cleanup policy live in their matching helper modules.
+
 Implemented:
 
 - CMake project
@@ -157,8 +179,15 @@ curl -X POST "http://127.0.0.1:8080/tasks/stop?device=devA"
 
 Raw command JSON can also be sent through `POST /commands`; the request body is the same one-line command JSON used by console mode.
 
+## Documentation Notes
+
+- `include/README.md` documents header ownership, facade boundaries, and helper-module responsibilities.
+- `src/README.md` documents executable behavior, startup modes, and implementation boundaries.
+- `docs/重构执行文档.md` remains the phase checklist; the README files describe the current repository state after those refactors.
+
 ## Change Log
 
+- 2026-05-19: Phase 6 README refresh added repository, include, and source architecture notes.
 - 2026-05-19: Phase 7 HTTP server added with local JSON APIs for commands, task control, status, devices, health, and latest Resources.
 - 2026-05-19: Phase 8 Resources cleanup and collection stability hardening added.
 - 2026-05-18: Added Phase 6 multi-device DataTask scheduling with per-device worker threads, stop flags, status tracking, and `start_all`/`stop_all`/`get_status` commands.

@@ -2,11 +2,17 @@
 
 #include "Models.h"
 
-#include <sqlite3.h>
-
-#include <mutex>
+#include <memory>
 #include <string>
 #include <vector>
+
+namespace db {
+class DataPointRepository;
+class DeviceRepository;
+class ResourceRepository;
+class ResourceRetentionService;
+class SQLiteConnection;
+} // namespace db
 
 class SQLiteManager {
 public:
@@ -33,12 +39,11 @@ public:
     void cleanupResourcesForDevice(const std::string& deviceName, int maxRows);
 
 private:
-    void openDatabase();
     void initializeSchema(const std::string& initSqlPath);
-    void execute(const std::string& sql) const;
-    bool hasRows(const std::string& sql) const;
 
-    std::string databasePath_;
-    sqlite3* db_ = nullptr;
-    mutable std::recursive_mutex dbMutex_;
+    std::unique_ptr<db::SQLiteConnection> connection_;
+    std::unique_ptr<db::DeviceRepository> deviceRepository_;
+    std::unique_ptr<db::DataPointRepository> dataPointRepository_;
+    std::unique_ptr<db::ResourceRepository> resourceRepository_;
+    std::unique_ptr<db::ResourceRetentionService> resourceRetentionService_;
 };

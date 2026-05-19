@@ -2,14 +2,11 @@
 
 #include "Models.h"
 #include "ModelRepository.h"
+#include "task/DeviceStatusStore.h"
 
 #include <atomic>
-#include <map>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <set>
-#include <thread>
 #include <vector>
 
 class SQLiteManager;
@@ -32,17 +29,9 @@ public:
 
 private:
     void runDeviceTask(Device device, std::shared_ptr<std::atomic_bool> stopFlag);
-    void processResponse(const Device& device,
-                         const std::vector<DataPoint>& points,
-                         const std::string& responseText);
     void sleepUntilNextCycle(int sampleIntervalMs, const std::shared_ptr<std::atomic_bool>& stopFlag);
-    void setLatestStatus(const DeviceStatus& status);
 
     SQLiteManager& sqliteManager_;
-    std::map<std::string, DeviceStatus> statuses_;
-    std::set<std::string> activeDevices_;
-    std::map<std::string, std::thread> workerThreads_;
-    std::map<std::string, std::shared_ptr<std::atomic_bool>> stopFlags_;
+    task::DeviceStatusStore statusStore_;
     ModelRepository modelRepository_;
-    mutable std::mutex stateMutex_;
 };

@@ -1,12 +1,16 @@
 build*/CMakeFiles/
 build*/CMakeCache.txt
 build*/Makefile
+build*/build.ninja
+build*/.ninja_*
 build*/cmake_install.cmake
 build*/collector-service*.exe
 build*/data/
 build*/server.*
 build-phase55/
 data/*.sqlite
+*.ilk
+*.pdb
 *.log
 *.pid
 server.out

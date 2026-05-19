@@ -1,10 +1,10 @@
 #include "CommandProcessor.h"
 #include "DataTask.h"
 #include "HttpServer.h"
-#include "Logger.h"
 #include "ModelRepository.h"
 #include "MockDriverServer.h"
 #include "SQLiteManager.h"
+#include "util/Logger.h"
 
 #include <chrono>
 #include <exception>
